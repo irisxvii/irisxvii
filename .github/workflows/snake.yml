@@ -1,51 +1,30 @@
 name: Generate Snake
-
 on:
   schedule:
-    - cron: "0 0 * * *"  # Runs daily at midnight UTC
-  workflow_dispatch:  # Allows manual triggering of the workflow
-  push:
-    branches:
-      - main  # Trigger on push to the main branch
-
-permissions:
-  contents: write  # Ensures the token has write permissions for pushing
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
 
 jobs:
-  generate:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
     steps:
-      # Step 1: Checkout the repository
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      # Step 2: Create dist directory
-      - name: Create dist directory
-        run: mkdir -p dist  # Ensure the dist directory exists
-
-      # Step 3: Generate the snake animations
-      - name: Generate GitHub Contributions Snake Animations
-        uses: Platane/snk@master  # Use the latest stable version of Platane/snk
+      - uses: actions/checkout@v2
+      - uses: Platane/snk@master
+        id: snake-gif
         with:
-          github_user_name: ${{ github.repository_owner }}
-          outputs: |
-            dist/github-snake.svg
-            dist/github-snake-dark.svg?palette=github-dark
-            dist/ocean.gif?color_snake=orange&color_dots=#bfd6f6,#8dbdff,#64a1f4,#4b91f1,#3c7dd9
+          github_user_name: irisxvii
+          gif_out_path: dist/github-contribution-grid-snake.gif
+          svg_out_path: dist/github-contribution-grid-snake.svg
+      - run: git status
+      - name: Push changes
+        uses: ad-m/github-push-action@v0.6.0 
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: master
+          force: true
+      - uses: crazy-max/ghaction-github-pages@v2.1.3
+        with:
+          target_branch: output
+          build_dir: dist
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Using the default GITHUB_TOKEN
-
-      # Step 4: Debugging: List files in dist directory
-      - name: List files in dist directory
-        run: ls -la dist  # Check which files are created
-
-      # Step 5: Deploy to Output Branch
-      - name: Deploy to Output Branch
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}  # Or use a PAT if necessary
-          publish_dir: ./dist  # This should point to the correct directory with all the files
-          publish_branch: output
-          commit_message: "Update snake animation [skip ci]"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
